@@ -217,20 +217,38 @@ def cerrar_dia():
 
             guardar_consumos(pd.DataFrame(columns=consumos_df.columns))
             st.success(f"Día cerrado. Datos guardados en {backup_path}.")
-            
+
             # Generar reporte diario
             reporte_diario = consumos_df
             generar_reporte_diario_html(reporte_diario)
+
+            # Botón para descargar el archivo Excel
+            with open(backup_path, "rb") as file:
+                st.download_button(
+                    label="Descargar Reporte Diario Excel",
+                    data=file,
+                    file_name=f"consumos_{fecha_actual}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
     else:
         backup_path = os.path.join(BACKUP_DIR, f"consumos_{fecha_actual}.xlsx")
         consumos_df.to_excel(backup_path, index=False)
 
         guardar_consumos(pd.DataFrame(columns=consumos_df.columns))
         st.success(f"Día cerrado. Datos guardados en {backup_path}.")
-        
+
         # Generar reporte diario
         reporte_diario = consumos_df
         generar_reporte_diario_html(reporte_diario)
+
+        # Botón para descargar el archivo Excel
+        with open(backup_path, "rb") as file:
+            st.download_button(
+                label="Descargar Reporte Diario Excel",
+                data=file,
+                file_name=f"consumos_{fecha_actual}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
 # Cargar datos iniciales
 menu_df = cargar_menu()
@@ -244,21 +262,26 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.header("Registrar Consumo")
-    cliente = st.text_input("Nombre del Cliente", value="", key="cliente_input", help="Escriba el nombre del cliente. Si ya existe, aparecerá en las sugerencias.")
-    nombres_registrados = cargar_consumos()["Cliente"].dropna().unique().tolist()
-    if cliente in nombres_registrados:
-        st.info("Cliente ya registrado.")
-    producto_seleccionado = st.selectbox("Producto", menu_df["Producto"], key="producto_select")
-    cantidad = st.number_input("Cantidad", min_value=1, value=1, step=1, key="cantidad_input")
-    precio_unitario = menu_df[menu_df["Producto"] == producto_seleccionado]["Precio"].values[0]
-    ganancia = menu_df[menu_df["Producto"] == producto_seleccionado]["Ganancias"].values[0]
-
-    if st.button("Registrar Consumo", key="registrar_consumo_btn"):
-        nuevo_consumo = registrar_consumo(cliente, producto_seleccionado, cantidad, precio_unitario, ganancia)
-        st.success(f"Consumo registrado: Cliente: {nuevo_consumo['Cliente']}, Producto: {nuevo_consumo['Producto']}, Cantidad: {nuevo_consumo['Cantidad']}")
-        # time.sleep(3)
+    cliente = st.text_input(
+        "Nombre del Cliente",
+        value="",
+        key="cliente_input",
+        help="Escriba el nombre del cliente. Si ya existe, aparecerá en las sugerencias."
+    )
+    if not cliente.strip():  # Validación para nombres vacíos
+        st.warning("Debe ingresar un nombre de cliente válido.")
+    else:
         nombres_registrados = cargar_consumos()["Cliente"].dropna().unique().tolist()
-        st.query_params["update"] = "true"
+        if cliente in nombres_registrados:
+            st.info("Cliente ya registrado.")
+        producto_seleccionado = st.selectbox("Producto", menu_df["Producto"], key="producto_select")
+        cantidad = st.number_input("Cantidad", min_value=1, value=1, step=1, key="cantidad_input")
+        precio_unitario = menu_df[menu_df["Producto"] == producto_seleccionado]["Precio"].values[0]
+        ganancia = menu_df[menu_df["Producto"] == producto_seleccionado]["Ganancias"].values[0]
+
+        if st.button("Registrar Consumo", key="registrar_consumo_btn"):
+            nuevo_consumo = registrar_consumo(cliente, producto_seleccionado, cantidad, precio_unitario, ganancia)
+            st.success(f"Consumo registrado: Cliente: {nuevo_consumo['Cliente']}, Producto: {nuevo_consumo['Producto']}, Cantidad: {nuevo_consumo['Cantidad']}")
 
 with col2:
     st.header("Asignar Pago")
