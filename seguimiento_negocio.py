@@ -256,14 +256,9 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.header("Registrar Consumo")
-    cliente = st.text_input(
-        "Nombre del Cliente",
-        value="",
-        key="cliente_input",
-        help="Escriba el nombre del cliente. Si ya existe, aparecerá en las sugerencias."
-    )
-    if not cliente.strip():  # Validación para nombres vacíos
-        st.warning("Debe ingresar un nombre de cliente válido.")
+    cliente = st.text_input("Nombre del Cliente", value="", key="cliente_input", help="Escriba el nombre del cliente. Si ya existe, aparecerá en las sugerencias.")
+    if not cliente.strip():
+        st.error("El nombre del cliente no puede estar vacío.")
     else:
         nombres_registrados = cargar_consumos()["Cliente"].dropna().unique().tolist()
         if cliente in nombres_registrados:
@@ -276,7 +271,10 @@ with col1:
         if st.button("Registrar Consumo", key="registrar_consumo_btn"):
             nuevo_consumo = registrar_consumo(cliente, producto_seleccionado, cantidad, precio_unitario, ganancia)
             st.success(f"Consumo registrado: Cliente: {nuevo_consumo['Cliente']}, Producto: {nuevo_consumo['Producto']}, Cantidad: {nuevo_consumo['Cantidad']}")
-
+            nombres_registrados = cargar_consumos()["Cliente"].dropna().unique().tolist()
+            st.query_params["update"] = "true"
+        
+        
 with col2:
     st.header("Asignar Pago")
     clientes_no_pagados = cargar_consumos()
