@@ -340,35 +340,9 @@ with col4:
     st.header("Cierre del Día")
     if st.button("Cerrar Día", key="cerrar_dia_btn"):
         cerrar_dia()
-# Nueva fila de columnas
-col5, col6 = st.columns(2)
-
-with col5:
-    st.header("Eliminar Registro de Consumo")
-    consumos_df = cargar_consumos()
-    if consumos_df.empty:
-        st.info("No hay registros de consumo disponibles para eliminar.")
-    else:
-        cliente_eliminar = st.selectbox("Seleccionar Cliente", consumos_df["Cliente"].unique(), key="cliente_eliminar_select")
-        if cliente_eliminar:
-            consumos_cliente = consumos_df[consumos_df["Cliente"] == cliente_eliminar]
-            producto_eliminar = st.selectbox("Seleccionar Producto", consumos_cliente["Producto"].unique(), key="producto_eliminar_select")
-            fecha_eliminar = st.selectbox("Seleccionar Fecha", consumos_cliente["Fecha"].unique(), key="fecha_eliminar_select")
-            
-            if st.button("Eliminar Registro", key="eliminar_consumo_btn"):
-                if eliminar_consumo(cliente_eliminar, producto_eliminar, fecha_eliminar):
-                    st.success(f"Registro eliminado: Cliente: {cliente_eliminar}, Producto: {producto_eliminar}, Fecha: {fecha_eliminar}")
-                    st.experimental_rerun()
-
-with col6:
-    st.header("Información del Registro")
-    if consumos_df.empty:
-        st.info("No hay información adicional para mostrar.")
-    else:
-        st.write("Aquí puede consultar detalles adicionales antes de eliminar.")
-        st.dataframe(consumos_df)
-
+        
 # Sección para generar reporte diario
 st.header("Reporte Diario")
 if st.button("Generar Reporte Diario", key="generar_reporte_btn"):
     generar_reporte_diario()
+    
