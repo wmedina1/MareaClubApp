@@ -6,6 +6,7 @@ import os
 import datetime
 import time
 from io import BytesIO
+import base64
 
 # Archivos necesarios
 MENU_FILE = "menu.xlsx"
@@ -134,18 +135,24 @@ def generar_reporte_diario():
         st.write("No hay datos para el día de hoy.")
         
 # Generar factura en formato impreso
+# Generar factura en formato impreso
 def imprimir_factura(cliente_df, cliente_seleccionado):
     total_cliente = cliente_df["Total"].sum()
-    factura_texto = f"Factura para: **{cliente_seleccionado}**\n"
-    factura_texto += "=" * 63 + "\n"
-    factura_texto += f"{'Cantidad':<10}{'Producto':<40}{'Total':>10}\n"
-    factura_texto += "-" * 63 + "\n"
+    factura_texto = f"""
+Factura para: **{cliente_seleccionado}**
+===============================================================
+Cantidad   Producto                                   Total
+---------------------------------------------------------------
+"""
     for _, row in cliente_df.iterrows():
-        factura_texto += f"{row['Cantidad']:<10}{row['Producto']:<40}RD$ {row['Total']:>5,.2f}\n"
-    factura_texto += "=" * 63 + "\n"
-    factura_texto += f"{'Total acumulado:':<40}RD$ {total_cliente:,.2f}\n"
-    factura_texto += "=" * 63
-    st.text(factura_texto)
+        factura_texto += f"{row['Cantidad']:<10}{row['Producto']:<40}RD$ {row['Total']:>10,.2f}\n"
+    factura_texto += f"""
+===============================================================
+{'Total acumulado:':<50}RD$ {total_cliente:,.2f}
+===============================================================
+"""
+    st.markdown(f"```\n{factura_texto}\n```")
+
   
 # Generar reporte diario en formato HTML
 def generar_reporte_diario_html(reporte_diario):
@@ -201,7 +208,15 @@ def generar_reporte_diario_html(reporte_diario):
         f.write(html_content)
     st.success(f"Reporte en HTML guardado en {html_path}.")
 
-# Cierre del día
+# Función para generar un enlace de descarga
+def generar_descarga(filepath, label):
+    with open(filepath, "rb") as f:
+        data = f.read()
+    b64 = base64.b64encode(data).decode()
+    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{os.path.basename(filepath)}">{label}</a>'
+    return href
+
+# Modificación en cerrar_dia
 def cerrar_dia():
     consumos_df = cargar_consumos()
     clientes_no_pagados = consumos_df[consumos_df["Pago"].isna()]
@@ -217,38 +232,17 @@ def cerrar_dia():
 
             guardar_consumos(pd.DataFrame(columns=consumos_df.columns))
             st.success(f"Día cerrado. Datos guardados en {backup_path}.")
-
-            # Generar reporte diario
-            reporte_diario = consumos_df
-            generar_reporte_diario_html(reporte_diario)
-
-            # Botón para descargar el archivo Excel
-            with open(backup_path, "rb") as file:
-                st.download_button(
-                    label="Descargar Reporte Diario Excel",
-                    data=file,
-                    file_name=f"consumos_{fecha_actual}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+            descargar_reporte = generar_descarga(backup_path, "Descargar Reporte")
+            st.markdown(descargar_reporte, unsafe_allow_html=True)
     else:
         backup_path = os.path.join(BACKUP_DIR, f"consumos_{fecha_actual}.xlsx")
         consumos_df.to_excel(backup_path, index=False)
 
         guardar_consumos(pd.DataFrame(columns=consumos_df.columns))
         st.success(f"Día cerrado. Datos guardados en {backup_path}.")
+        descargar_reporte = generar_descarga(backup_path, "Descargar Reporte")
+        st.markdown(descargar_reporte, unsafe_allow_html=True)
 
-        # Generar reporte diario
-        reporte_diario = consumos_df
-        generar_reporte_diario_html(reporte_diario)
-
-        # Botón para descargar el archivo Excel
-        with open(backup_path, "rb") as file:
-            st.download_button(
-                label="Descargar Reporte Diario Excel",
-                data=file,
-                file_name=f"consumos_{fecha_actual}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
 
 # Cargar datos iniciales
 menu_df = cargar_menu()
