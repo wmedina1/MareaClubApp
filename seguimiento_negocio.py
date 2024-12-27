@@ -153,9 +153,67 @@ Cantidad   Producto                                   Total
 """
     st.markdown(f"```\n{factura_texto}\n```")
 
-  
-# Generar reporte diario en formato HTML
-def generar_reporte_diario_html(reporte_diario):
+# Función para generar un enlace de descarga
+def generar_descarga(filepath, label):
+    with open(filepath, "rb") as f:
+        data = f.read()
+    b64 = base64.b64encode(data).decode()
+    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{os.path.basename(filepath)}">{label}</a>'
+    return href
+
+# Modificación en cerrar_dia
+def cerrar_dia():
+    consumos_df = cargar_consumos()
+    clientes_no_pagados = consumos_df[consumos_df["Pago"].isna()]
+    fecha_actual = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    if not clientes_no_pagados.empty:
+        total_pendiente = clientes_no_pagados["Total"].sum()
+        st.warning(f"Faltan {len(clientes_no_pagados)} clientes por pagar con un total de RD$ {total_pendiente:.2f}.")
+        st.dataframe(clientes_no_pagados[["Cliente", "Total"]])
+        if st.button("Sí, cerrar el día de todos modos", key="confirmar_cierre_btn"):
+            # Generar y guardar el archivo Excel
+            backup_path_excel = os.path.join(BACKUP_DIR, f"consumos_{fecha_actual}.xlsx")
+            consumos_df.to_excel(backup_path_excel, index=False)
+
+            # Guardar datos vacíos para cerrar el día
+            guardar_consumos(pd.DataFrame(columns=consumos_df.columns))
+            st.success(f"Día cerrado. Datos guardados en {backup_path_excel}.")
+            
+            # Generar y guardar el archivo HTML del reporte
+            backup_path_html = os.path.join(BACKUP_DIR, f"reporte_diario_{fecha_actual}.html")
+            generar_reporte_diario_html(consumos_df, backup_path_html)
+
+            # Crear enlaces de descarga
+            descargar_excel = generar_descarga(backup_path_excel, "Descargar Reporte Excel")
+            descargar_html = generar_descarga(backup_path_html, "Descargar Reporte HTML")
+            
+            # Mostrar los enlaces en la aplicación
+            st.markdown(descargar_excel, unsafe_allow_html=True)
+            st.markdown(descargar_html, unsafe_allow_html=True)
+    else:
+        # Generar y guardar el archivo Excel
+        backup_path_excel = os.path.join(BACKUP_DIR, f"consumos_{fecha_actual}.xlsx")
+        consumos_df.to_excel(backup_path_excel, index=False)
+
+        # Guardar datos vacíos para cerrar el día
+        guardar_consumos(pd.DataFrame(columns=consumos_df.columns))
+        st.success(f"Día cerrado. Datos guardados en {backup_path_excel}.")
+        
+        # Generar y guardar el archivo HTML del reporte
+        backup_path_html = os.path.join(BACKUP_DIR, f"reporte_diario_{fecha_actual}.html")
+        generar_reporte_diario_html(consumos_df, backup_path_html)
+
+        # Crear enlaces de descarga
+        descargar_excel = generar_descarga(backup_path_excel, "Descargar Reporte Excel")
+        descargar_html = generar_descarga(backup_path_html, "Descargar Reporte HTML")
+        
+        # Mostrar los enlaces en la aplicación
+        st.markdown(descargar_excel, unsafe_allow_html=True)
+        st.markdown(descargar_html, unsafe_allow_html=True)
+
+# Modificación en generar_reporte_diario_html para aceptar el path
+def generar_reporte_diario_html(reporte_diario, output_path):
     fecha_actual = datetime.datetime.now().strftime("%Y-%m-%d")
     html_content = f"""
     <html>
@@ -203,46 +261,8 @@ def generar_reporte_diario_html(reporte_diario):
     </body>
     </html>
     """
-    html_path = os.path.join(BACKUP_DIR, f"reporte_diario_{fecha_actual}.html")
-    with open(html_path, "w", encoding="utf-8") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_content)
-    st.success(f"Reporte en HTML guardado en {html_path}.")
-
-# Función para generar un enlace de descarga
-def generar_descarga(filepath, label):
-    with open(filepath, "rb") as f:
-        data = f.read()
-    b64 = base64.b64encode(data).decode()
-    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{os.path.basename(filepath)}">{label}</a>'
-    return href
-
-# Modificación en cerrar_dia
-def cerrar_dia():
-    consumos_df = cargar_consumos()
-    clientes_no_pagados = consumos_df[consumos_df["Pago"].isna()]
-    fecha_actual = datetime.datetime.now().strftime("%Y-%m-%d")
-
-    if not clientes_no_pagados.empty:
-        total_pendiente = clientes_no_pagados["Total"].sum()
-        st.warning(f"Faltan {len(clientes_no_pagados)} clientes por pagar con un total de RD$ {total_pendiente:.2f}.")
-        st.dataframe(clientes_no_pagados[["Cliente", "Total"]])
-        if st.button("Sí, cerrar el día de todos modos", key="confirmar_cierre_btn"):
-            backup_path = os.path.join(BACKUP_DIR, f"consumos_{fecha_actual}.xlsx")
-            consumos_df.to_excel(backup_path, index=False)
-
-            guardar_consumos(pd.DataFrame(columns=consumos_df.columns))
-            st.success(f"Día cerrado. Datos guardados en {backup_path}.")
-            descargar_reporte = generar_descarga(backup_path, "Descargar Reporte")
-            st.markdown(descargar_reporte, unsafe_allow_html=True)
-    else:
-        backup_path = os.path.join(BACKUP_DIR, f"consumos_{fecha_actual}.xlsx")
-        consumos_df.to_excel(backup_path, index=False)
-
-        guardar_consumos(pd.DataFrame(columns=consumos_df.columns))
-        st.success(f"Día cerrado. Datos guardados en {backup_path}.")
-        descargar_reporte = generar_descarga(backup_path, "Descargar Reporte")
-        st.markdown(descargar_reporte, unsafe_allow_html=True)
-
 
 # Cargar datos iniciales
 menu_df = cargar_menu()
