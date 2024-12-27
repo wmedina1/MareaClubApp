@@ -256,8 +256,9 @@ with col1:
     if st.button("Registrar Consumo", key="registrar_consumo_btn"):
         nuevo_consumo = registrar_consumo(cliente, producto_seleccionado, cantidad, precio_unitario, ganancia)
         st.success(f"Consumo registrado: Cliente: {nuevo_consumo['Cliente']}, Producto: {nuevo_consumo['Producto']}, Cantidad: {nuevo_consumo['Cantidad']}")
-        time.sleep(3)
-        st.experimental_rerun()
+        # time.sleep(3)
+        nombres_registrados = cargar_consumos()["Cliente"].dropna().unique().tolist()
+        st.experimental_set_query_params(update=True)
 
 with col2:
     st.header("Asignar Pago")
