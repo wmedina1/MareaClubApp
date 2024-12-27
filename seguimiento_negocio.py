@@ -258,7 +258,7 @@ with col1:
         st.success(f"Consumo registrado: Cliente: {nuevo_consumo['Cliente']}, Producto: {nuevo_consumo['Producto']}, Cantidad: {nuevo_consumo['Cantidad']}")
         # time.sleep(3)
         nombres_registrados = cargar_consumos()["Cliente"].dropna().unique().tolist()
-        st.experimental_set_query_params(update=True)
+        st.query_params["update"] = "true"
 
 with col2:
     st.header("Asignar Pago")
