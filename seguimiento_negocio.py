@@ -311,7 +311,7 @@ with col2:
     clientes_no_pagados = clientes_no_pagados[clientes_no_pagados["Pago"].isna()]["Cliente"].dropna().unique()
     if len(clientes_no_pagados) > 0:
         cliente_pago = st.selectbox("Nombre del Cliente para Asignar Pago", clientes_no_pagados, key="cliente_pago_select")
-        metodo_pago = st.selectbox("Método de Pago", ["Efectivo", "Tarjeta", "Transferencia", "Mixto"], key="metodo_pago_select")
+        metodo_pago = st.selectbox("Método de Pago", ["Efectivo", "Tarjeta", "Transferencia", "Mixto", "Por Pagar"], key="metodo_pago_select")
         if st.button("Registrar Pago", key="registrar_pago_btn"):
             cliente_actualizado = actualizar_pago(cliente_pago, metodo_pago)
             if not cliente_actualizado.empty:
